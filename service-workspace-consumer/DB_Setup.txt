@@ -1,0 +1,45 @@
+If authentication fails -> ALTER USER 'root' IDENTIFIED WITH mysql_native_password BY 'admin'
+
+SET SQL_SAFE_UPDATES = 0;
+
+
+3> Create ci TABLES and Insert data
+-------------------------------------------------------------------------------------
+CREATE TABLE papyrus_workspace.ci_type (
+  ci_id BINARY(16) UNIQUE DEFAULT (uuid_to_bin(uuid())),
+  ci_tool_name VARCHAR(20),
+  created_timestamp TIMESTAMP NOT NULL DEFAULT current_timestamp,
+  PRIMARY KEY(ci_tool_name)
+);
+
+CREATE TABLE papyrus_workspace.ci_team (
+   ci_team_id BINARY(16) UNIQUE DEFAULT (uuid_to_bin(uuid())),
+   ci_team_name VARCHAR(40),
+   created_timestamp TIMESTAMP NOT NULL DEFAULT current_timestamp,
+   PRIMARY KEY(ci_team_name)
+);
+
+CREATE TABLE papyrus_workspace.tenant_names (
+	tenant_id BINARY(16) UNIQUE DEFAULT (uuid_to_bin(uuid())),
+	tenant_name VARCHAR(20),
+	tenant_key VARCHAR(20),
+	created_timestamp TIMESTAMP NOT NULL DEFAULT current_timestamp,
+	PRIMARY KEY(tenant_key)
+ )
+
+CREATE TABLE papyrus_workspace.retry_topics (
+   id BINARY(16) UNIQUE DEFAULT (uuid_to_bin(uuid())),
+   retry_data TEXT ,
+   retry_count TINYINT NOT NULL,
+   topic_name TEXT NOT NULL,
+   errored_out TINYINT NOT NULL,
+   schema_value TEXT NOT NULL,
+   error_text TEXT,
+   created_timestamp TIMESTAMP NOT NULL DEFAULT current_timestamp
+);
+
+** If needed
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'rootPapy'; 
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'rootPapy';
+
+FLUSH PRIVILEGES;

@@ -1,0 +1,57 @@
+#!groovy
+
+DOCKER_REGISTRY = 'registry.gear.ge.com'
+TEAM_REPO = 'creteam'
+GIT_REPOSITORY = ''
+
+def pushImageToRegistry (docker_registry_val, username_val, password_val, team_repo_val, image_name) {
+    sh """
+        docker login https://${docker_registry_val} -u ${username_val} -p ${password_val}
+        docker push ${docker_registry_val}/${team_repo_val}/${image_name}
+        docker logout https://${docker_registry_val}
+    """
+}
+
+pipeline {
+    agent {
+        label 'dind'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    if (params.DOCKER_IMAGE_NAME == '' || params.DOCKER_IMAGE_TAG == '' || params.USER == '' || params.LOGIN_TOKEN == '') { // and/or whatever condition you want
+                        currentBuild.result = 'ABORTED'
+                        error('Required Jenkins parameters not set')
+                    }
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                    docker build --no-cache -t "${DOCKER_REGISTRY}/${TEAM_REPO}/${params.DOCKER_IMAGE_NAME}:${params.DOCKER_IMAGE_TAG}" -f Dockerfile.prod .
+                """
+            }
+        }
+        stage('Push Docker image') {
+            steps {
+                pushImageToRegistry(DOCKER_REGISTRY, params.USER, params.LOGIN_TOKEN, TEAM_REPO, "${params.DOCKER_IMAGE_NAME}:${params.DOCKER_IMAGE_TAG}")
+            }
+        }
+    }
+
+    post {
+        failure {
+            script {
+                echo 'Docker build failed'
+                emailext(
+                    subject: "Jenkins App Microservice: ${params.DOCKER_IMAGE_NAME}:${params.DOCKER_IMAGE_TAG} build failed",
+                    body: "Build failed (${env.JOB_NAME} [${env.BUILD_NUMBER}]). Check console output at ${env.BUILD_URL}console",
+                    to: "${env.EMAIL_ON_FAILURE}"
+                )
+            }
+        }
+    }
+}

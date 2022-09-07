@@ -1,0 +1,46 @@
+If authentication fails -> ALTER USER 'root' IDENTIFIED WITH mysql_native_password BY 'admin'
+
+SET SQL_SAFE_UPDATES = 0;
+
+
+3> Create ci TABLES and Insert data
+-------------------------------------------------------------------------------------
+CREATE TABLE papyrus_jobs.job_details (
+   job_id BINARY(16) UNIQUE DEFAULT (uuid_to_bin(uuid())),
+   job_name VARCHAR(255),
+   job_health TEXT,
+   job_health_description TEXT,
+   team_name VARCHAR(40),
+   job_owner VARCHAR(40),
+   branch_name TEXT,
+   last_build_result TEXT,
+   last_build_timestamp BIGINT,
+   last_build_url TEXT,
+   last_build_tenant TEXT,
+   user_comments TEXT,
+   job_type VARCHAR(20),
+   ci_name VARCHAR(20),
+   embeddable_url TEXT,
+   created_timestamp TIMESTAMP NOT NULL DEFAULT current_timestamp,
+   PRIMARY KEY (job_name)
+);
+
+
+CREATE TABLE papyrus_jobs.job_build_history (
+   build_history_id BINARY(16) UNIQUE DEFAULT (uuid_to_bin(uuid())),
+   build_number INTEGER,
+   job_id VARCHAR(255),
+   build_result VARCHAR(15),
+   build_duration BIGINT,
+   build_url VARCHAR(255),
+   build_timestamp BIGINT,
+   branch_name TEXT,
+   tenant_name VARCHAR(20),
+   app_build_number TEXT,
+   app_version TEXT,
+   browser_name TEXT,
+   build_stages JSON,
+   created_timestamp TIMESTAMP NOT NULL DEFAULT current_timestamp,
+   PRIMARY KEY(build_url,tenant_name),
+   FOREIGN KEY (job_id) REFERENCES papyrusjobs.job_details(job_name) ON DELETE CASCADE
+   );

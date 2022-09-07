@@ -1,0 +1,53 @@
+#!groovy
+
+DOCKER_REGISTRY = 'some registry url'
+TEAM_REPO = '212718972'
+GIT_REPOSITORY = 'https://github'
+
+def pushImageToRegistry (docker_registry_val, username_val, password_val, team_repo_val) {
+    sh """
+        docker login https://${docker_registry_val} -u ${username_val} -p ${password_val}
+        docker push ${docker_registry_val}/${team_repo_val}/${ci_params.Docker_Image_Name}
+        docker logout https://${docker_registry_val}
+    """
+}
+pipeline {
+    agent {
+        label 'dind'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                    docker build --no-cache -t "${DOCKER_REGISTRY}/${TEAM_REPO}/${params.Docker_Image_Name}" -f Dockerfile.prod .
+                """
+            }
+        }
+        stage('Push Docker image') {
+            steps {
+                sh """
+                    docker login https://${DOCKER_REGISTRY} -u ${TEAM_REPO} -p ${params.LOGIN_TOKEN}
+                    docker push ${DOCKER_REGISTRY}/${TEAM_REPO}/${params.Docker_Image_Name}
+                    docker logout https://${DOCKER_REGISTRY}
+                """
+            }
+        }
+    }
+    post {
+        failure {
+            script {
+                echo 'Docker build failed'
+                emailext(
+                    subject: "Jenkins App Microservice: ${params.Docker_Image_Name} build failed",
+                    body: "Build failed (${env.JOB_NAME} [${env.BUILD_NUMBER}]). Check console output at ${env.BUILD_URL}console",
+                    to: "${env.emailOnFailure}"
+                )
+            }
+        }
+    }
+}
