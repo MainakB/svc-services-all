@@ -594,7 +594,7 @@ const getJobMetadataOnComplete = async (api_url, ssoToken) => {
 };
 
 const getSsoToken = async () => {
-  return "117c65b738e4be5e7d321e50a7dbb1c6b0";
+  return process.env.CONATBOJENKINSTOKEN;
   // let ssoTokenResult = await fetchSssoTokenRemote(workspace_name);
   // if (!ssoTokenResult) {
   //   ssoTokenResult = await fetchSssoTokenRest(workspace_name);
